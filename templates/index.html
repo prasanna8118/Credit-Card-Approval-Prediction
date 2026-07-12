@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Credit Card Approval Prediction</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 780px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: #1a1a2e;
+      margin-bottom: 0.3rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 1.8rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 0.3rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #222;
+      background: #fafafa;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2c5364;
+      background: #fff;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    button[type="submit"] {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(90deg, #203a43, #2c5364);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button[type="submit"]:hover { opacity: 0.88; }
+
+    .result-box {
+      margin-top: 1.5rem;
+      padding: 1.2rem 1.5rem;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .approved { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e4c1; }
+    .rejected { background: #fdecea; color: #b71c1c; border: 1px solid #f5c6c6; }
+    .error-box { background: #fff3cd; color: #856404; border: 1px solid #ffc107;
+                 border-radius: 10px; padding: 1rem; margin-top: 1rem; font-size: 0.9rem; }
+
+    .model-badge {
+      display: inline-block;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>💳 Credit Card Approval Prediction</h1>
+  <p class="subtitle">Enter applicant details to get an instant approval decision.</p>
+  <span class="model-badge">Model: {{ model_name }}</span>
+
+  <form method="POST" action="/predict">
+    <div class="grid">
+
+      <div>
+        <label>Gender</label>
+        <select name="Gender">
+          <option value="M" {% if form_data and form_data.Gender=='M' %}selected{% endif %}>Male</option>
+          <option value="F" {% if form_data and form_data.Gender=='F' %}selected{% endif %}>Female</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Annual Income ($)</label>
+        <input type="number" name="Annual_Income" min="0" step="1000"
+               value="{{ form_data.Annual_Income if form_data else '' }}" placeholder="e.g. 75000" required/>
+      </div>
+
+      <div>
+        <label>Car Owner</label>
+        <select name="Car_Owner">
+          <option value="Y" {% if form_data and form_data.Car_Owner=='Y' %}selected{% endif %}>Yes</option>
+          <option value="N" {% if form_data and form_data.Car_Owner=='N' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Property Owner</label>
+        <select name="Property_Owner">
+          <option value="Y" {% if form_data and form_data.Property_Owner=='Y' %}selected{% endif %}>Yes</option>
+          <option value="N" {% if form_data and form_data.Property_Owner=='N' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Income Type</label>
+        <select name="Income_Type">
+          {% for v in ["Working","Commercial associate","Pensioner","State servant"] %}
+          <option value="{{ v }}" {% if form_data and form_data.Income_Type==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Education Type</label>
+        <select name="Education_Type">
+          {% for v in ["Higher education","Secondary","Incomplete higher","Lower secondary"] %}
+          <option value="{{ v }}" {% if form_data and form_data.Education_Type==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Family Status</label>
+        <select name="Family_Status">
+          {% for v in ["Married","Single","Separated","Widow"] %}
+          <option value="{{ v }}" {% if form_data and form_data.Family_Status==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Housing Type</label>
+        <select name="Housing_Type">
+          {% for v in ["House / apartment","Rented apartment","With parents"] %}
+          <option value="{{ v }}" {% if form_data and form_data.Housing_Type==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Occupation</label>
+        <select name="Occupation">
+          {% for v in ["Laborers","Core staff","Managers","Drivers","Sales staff"] %}
+          <option value="{{ v }}" {% if form_data and form_data.Occupation==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Employment Duration (years, negative)</label>
+        <input type="number" name="Employment_Duration" step="0.1" max="0"
+               value="{{ form_data.Employment_Duration if form_data else '' }}" placeholder="e.g. -5.0" required/>
+      </div>
+
+      <div>
+        <label>Family Members</label>
+        <input type="number" name="Family_Members" min="1" max="20"
+               value="{{ form_data.Family_Members if form_data else '' }}" placeholder="e.g. 3" required/>
+      </div>
+
+      <div>
+        <label>Number of Children</label>
+        <input type="number" name="Num_Children" min="0" max="10"
+               value="{{ form_data.Num_Children if form_data else '' }}" placeholder="e.g. 1" required/>
+      </div>
+
+      <div>
+        <label>Credit Inquiries (last 12 months)</label>
+        <input type="number" name="Num_Credit_Inquiries" min="0"
+               value="{{ form_data.Num_Credit_Inquiries if form_data else '' }}" placeholder="e.g. 2" required/>
+      </div>
+
+      <div>
+        <label>Payment Status (0 = no debt, 1–5 = months overdue)</label>
+        <select name="Payment_Status">
+          {% for v in range(6) %}
+          <option value="{{ v }}" {% if form_data and form_data.Payment_Status|int==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+
+    <button type="submit">Predict Approval</button>
+  </form>
+
+  {% if result %}
+  <div class="result-box {{ 'approved' if 'Approved' in result else 'rejected' }}">
+    {{ result }} &nbsp;|&nbsp; Confidence: {{ confidence }}%
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="error-box">⚠️ {{ error }}</div>
+  {% endif %}
+</div>
+</body>
+</html>
